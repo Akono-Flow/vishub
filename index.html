@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viz Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <link rel="stylesheet" href="./style.css">
+    <style>
+        
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-file-powerpoint"></i>
+            <h1>Viz Hub</h1>
+        </div>
+        <nav>
+            <div class="nav-icon" id="previewButton">
+                <i class="fas fa-eye"></i>
+                <span class="tooltip">Preview Slides</span>
+            </div>
+            <div class="nav-icon" id="quizButton">
+                <i class="fas fa-gamepad"></i>
+                <span class="tooltip">Quiz Mode</span>
+            </div>
+            <div class="nav-icon" id="settingsButton">
+                <i class="fas fa-cog"></i>
+                <span class="tooltip">Settings</span>
+            </div>
+            <div class="nav-icon" id="helpButton">
+                <i class="fas fa-question-circle"></i>
+                <span class="tooltip">Help</span>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="welcome-section">
+            <h2>Upload and Manipulate Images</h2>
+            <p>Upload your images, customize settings, and generate a PowerPoint presentation with just a few clicks.</p>
+        </div>
+        <a href="/" class="back-to-dashboard" title="Back to Dashboard">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        </a>
+
+        <div class="upload-container" id="dropZone">
+            <i class="fas fa-cloud-upload-alt upload-icon" id="uploadIcon"></i>
+            <p class="upload-text">Drag & drop images here or click to browse</p>
+            <input type="file" id="fileInput" class="upload-input" multiple accept="image/*">
+            <div class="upload-actions">
+                <div class="upload-action" id="importJsonButton">
+                    <i class="fas fa-file-import"></i>
+                    <span>Import JSON</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-state" id="emptyState">
+            <i class="fas fa-images empty-state-icon"></i>
+            <p class="empty-state-text">No images yet. Upload some to get started!</p>
+        </div>
+
+        <!-- Knowledge Filter Section -->
+        <div class="knowledge-filter" id="knowledgeFilter">
+            <span class="knowledge-filter-title">Filter by Knowledge:</span>
+            <div class="knowledge-filter-option" data-state="all">
+                <i class="fas fa-check-circle"></i>
+                <span>All</span>
+                <span class="knowledge-filter-count" id="allCount">0</span>
+            </div>
+            <div class="knowledge-filter-option" data-state="1">
+                <i class="fas fa-check-circle"></i>
+                <span>Known</span>
+                <span class="knowledge-filter-count" id="knownCount">0</span>
+            </div>
+            <div class="knowledge-filter-option" data-state="0">
+                <i class="fas fa-times-circle"></i>
+                <span>Unknown</span>
+                <span class="knowledge-filter-count" id="unknownCount">0</span>
+            </div>
+            <div class="knowledge-filter-option" data-state="-1">
+                <i class="fas fa-question-circle"></i>
+                <span>Not Interacted</span>
+                <span class="knowledge-filter-count" id="notInteractedCount">0</span>
+            </div>
+        </div>
+
+        <div class="images-container" id="imagesContainer"></div>
+    </main>
+
+    <footer>
+        Viz Hub &copy; 2025 | M. Cole <i class="fas fa-heart" style="color: var(--accent);"></i>
+    </footer>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h3 class="settings-title">Presentation Settings</h3>
+            <i class="fas fa-times close-settings" id="closeSettings"></i>
+        </div>
+
+        <div class="settings-group">
+            <h4 class="settings-group-title">Slide Options</h4>
+            <div class="settings-item">
+                <label for="slideSize">Slide Size</label>
+                <select id="slideSize">
+                    <option value="16:9">Widescreen (16:9)</option>
+                    <option value="4:3">Standard (4:3)</option>
+                </select>
+            </div>
+            <div class="settings-item">
+                <label for="slideTheme">Slide Theme</label>
+                <select id="slideTheme">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="gradient">Gradient</option>
+                </select>
+            </div>
+            <div class="settings-item toggle-container">
+                <span class="toggle-label">Add Title Slide</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="titleSlide" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <h4 class="settings-group-title">Text Options</h4>
+            <div class="settings-item">
+                <label for="textFont">Font</label>
+                <select id="textFont">
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Calibri">Calibri</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                </select>
+            </div>
+            <div class="settings-item">
+                <label for="textSize">Text Size</label>
+                <input type="range" id="textSize" min="16" max="36" value="24">
+            </div>
+            <div class="settings-item toggle-container">
+                <span class="toggle-label">Bold Text</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="boldText">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <h4 class="settings-group-title">Image Options</h4>
+            <div class="settings-item">
+                <label for="imageSize">Image Size</label>
+                <select id="imageSize">
+                    <option value="custom">Custom</option>
+                    <option value="fill">Fill Slide</option>
+                    <option value="fit">Fit to Slide</option>
+                </select>
+            </div>
+            <div class="settings-item toggle-container">
+                <span class="toggle-label">Image Border</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="imageBorder">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="settings-item toggle-container">
+                <span class="toggle-label">Image Shadow</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="imageShadow" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <h4 class="settings-group-title">Presentation Options</h4>
+            <div class="settings-item">
+                <label for="autoAdvanceDelay">Auto-Advance Delay (seconds)</label>
+                <input type="number" id="autoAdvanceDelay" min="1" max="60" value="10">
+            </div>
+        </div>
+
+        <!-- Add the generate button here with updated styling -->
+        <div class="settings-group">
+            <button class="generate-button disabled" id="generateButton">
+                <i class="fas fa-wand-magic-sparkles"></i>
+                Generate Presentation
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Generating Presentation</h3>
+                <i class="fas fa-times close-modal" id="closeModal"></i>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message" id="modalMessage">Please wait while we generate your presentation...</p>
+                <div class="loading">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+                <div class="modal-progress" id="modalProgress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p class="progress-text" id="progressText">Processing image 0 of 0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="preview-panel" id="previewPanel">
+        <div class="preview-header">
+            <!-- <h3 class="preview-title">Presentation Preview</h3> -->
+            <h3 class="preview-title">Slideshow</h3>
+            <div class="preview-controls">
+                <i class="fas fa-random preview-control" id="shuffleButton" title="Shuffle Images"></i>
+                <i class="fas fa-play preview-control" id="autoAdvanceButton" title="Toggle Auto-Advance"></i>
+                <i class="fas fa-expand preview-control" id="fullscreenButton" title="Fullscreen"></i>
+                <div class="knowledge-tracker" id="knowledgeTracker">
+                    <div class="knowledge-checkbox" id="knowledgeCheckboxContainer">
+                        <input type="checkbox" id="knowledgeCheckbox" title="Do you know this image name?">
+                        <span class="checkbox-icon"></span>
+                        <span class="knowledge-label">I know this image</span>
+                    </div>
+                </div>
+                <i class="fas fa-file-import preview-control" id="importJsonButton" title="Import JSON"></i>
+                <i class="fas fa-file-code preview-control" id="exportJsonButton" title="Export Images as JSON"></i>
+                <i class="fas fa-times preview-control" id="closePreview" title="Close Preview"></i>
+            </div>
+        </div>
+        <div class="preview-content">
+            <div class="preview-slide" id="previewSlide">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='24' fill='%23999'%3ENo preview available%3C/text%3E%3C/svg%3E" alt="Preview" class="preview-image" id="previewImage">
+                <div class="preview-text" id="previewText">Image Title</div>
+                <div class="timer-container" id="timerContainer">
+                    <i class="fas fa-clock timer-icon"></i>
+                    <span class="timer-value" id="timerValue">6</span>
+                </div>
+            </div>
+            <div class="preview-navigation">
+                <div class="preview-nav-button" id="prevSlide">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+                <div class="preview-indicator" id="slideIndicator">1 / 1</div>
+                <div class="preview-nav-button" id="nextSlide">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Panel -->
+    <div class="quiz-panel" id="quizPanel">
+        <div class="quiz-header">
+            <h2>Quiz Mode</h2>
+            <div class="quiz-controls">
+                <i class="fas fa-random quiz-control" id="quizShuffleButton" title="Shuffle Images"></i>
+                <i class="fas fa-play quiz-control" id="quizTimerButton" title="Start Timer"></i>
+                <i class="fas fa-expand quiz-control" id="quizFullscreenButton" title="Fullscreen"></i>
+                <i class="fas fa-file-import quiz-control" id="quizImportButton" title="Import Game State"></i>
+                <i class="fas fa-file-export quiz-control" id="quizExportButton" title="Export Game State"></i>
+                <i class="fas fa-times quiz-control" id="closeQuiz" title="Close Quiz"></i>
+            </div>
+        </div>
+        <div class="quiz-content">
+            <div class="quiz-main">
+                <div class="quiz-slide" id="quizSlide">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450' viewBox='0 0 800 450'%3E%3Crect width='800' height='450' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='24' fill='%23999'%3ENo preview available%3C/text%3E%3C/svg%3E" alt="Quiz" class="quiz-image" id="quizImage">
+                    <div class="quiz-text" id="quizText">Image Title</div>
+                    <div class="quiz-timer" id="quizTimer">30</div>
+                </div>
+                <div class="quiz-actions">
+                    <button class="quiz-button" id="prevQuizSlide">
+                        <i class="fas fa-chevron-left"></i>
+                        Previous
+                    </button>
+                    <button class="quiz-button primary" id="addScoreButton" disabled>
+                        <i class="fas fa-plus"></i>
+                        Add Score
+                    </button>
+                    <button class="quiz-button" id="nextQuizSlide">
+                        Next
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="quiz-sidebar">
+                <div class="quiz-players" id="quizPlayers">
+                    <!-- Players will be added here dynamically -->
+                </div>
+                <div class="quiz-add-player">
+                    <input type="text" id="newPlayerName" placeholder="Player name">
+                    <button id="addPlayerButton">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="quiz-leaderboard">
+                    <h4 class="quiz-leaderboard-title">Leaderboard</h4>
+                    <table class="quiz-leaderboard-table" id="leaderboardTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody">
+                            <!-- Leaderboard entries will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="quiz-settings">
+                    <h4 class="quiz-settings-title">Quiz Settings</h4>
+                    <div class="quiz-settings-item">
+                        <label for="timerDuration">Timer Duration (seconds)</label>
+                        <input type="number" id="timerDuration" min="5" max="60" value="10">
+                    </div>
+                    <div class="quiz-settings-item">
+                        <label for="maxScore">Maximum Score to Win</label>
+                        <input type="number" id="maxScore" min="1" value="10">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="quiz-game-over" id="gameOverModal">
+        <div class="quiz-game-over-content">
+            <h3 class="quiz-game-over-title">Game Over!</h3>
+            <p class="quiz-game-over-winner" id="gameOverWinner"></p>
+            <button class="quiz-game-over-button" id="restartQuizButton">Start New Game</button>
+        </div>
+    </div>
+
+    <!-- Description Modal -->
+    <div class="modal-overlay" id="descriptionModal">
+        <div class="description-modal">
+            <div class="description-modal-header">
+                <h3 class="description-modal-title">Image Description</h3>
+                <i class="fas fa-times close-modal" id="closeDescriptionModal"></i>
+            </div>
+            <div class="description-modal-body">
+                <div class="description-preview">
+                    <img id="descriptionPreviewImage" src="" alt="">
+                </div>
+                <div class="description-form">
+                    <label for="imageDescription">Description:</label>
+                    <textarea id="imageDescription" rows="4" placeholder="Enter a description for this image..."></textarea>
+                </div>
+            </div>
+            <div class="description-modal-footer">
+                <button class="description-modal-button cancel" id="cancelDescription">Cancel</button>
+                <button class="description-modal-button save" id="saveDescription">
+                    <i class="fas fa-save"></i>
+                    Save Description
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
